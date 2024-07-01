@@ -4,8 +4,9 @@
 
 import bcryptjs from "bcryptjs";
 import User from "../models/User.model.js";
+import { errorhandler } from "../utils/error.js";
 
-export const signup = async (req, res) => {
+export const signup = async (req, res, next) => {
   // console.log(req.body)
   // instead of console.log I want to save database/ we can just get the information like we can crate a constant and D structure the username ,email, and password.
   const { username, email, password } = req.body;
@@ -18,7 +19,7 @@ export const signup = async (req, res) => {
     email === "" ||
     password === ""
   ) {
-    return res.status(400).json({ mesaage: "All fields are required" });
+    next(errorhandler(400, "All fields are required"));
   }
 
   // password which we are getting from the request.body and 10 is number of round for salt which is going to be mix with our password and make it secure.
@@ -37,6 +38,6 @@ export const signup = async (req, res) => {
     await newUser.save();
     res.json({ message: "signup successful" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
