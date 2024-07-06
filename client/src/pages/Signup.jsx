@@ -1,7 +1,57 @@
-import { Button, Label, TextInput } from "flowbite-react";
-import { Link } from "react-router-dom";
+import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Signup() {
+  const [formData, setFormData] = useState({});
+
+  // This is for the error message
+  // suru ma msg xhai khali hunxa so, null rakheko
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  // loading ko lagi
+  const [loading, setLoading] = useState(false);
+  //suru ma navigate lai initialized garya
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    // yo chai browser ko console ma input dekhauxa I mean j type gariyo tei dekhauxa broswer ko console ma.
+    // console.log(e.target.value);
+    // ...formData vanya xhai previous value rakheko ho suru ma
+    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+  };
+  const handleSubmit = async (e) => {
+    // e.preventDefault ley xhai refresh hunna dinna.
+    e.preventDefault();
+    if (!formData.username || !formData.email || !formData.password) {
+      return setErrorMessage("Please fill out all fields.");
+    }
+    // submit the form
+    try {
+      //
+      setLoading(true);
+      // setErrorMessage chai kina null garya bani cause previous request we want to clean that one, ani previous request error free pani huna sakxa ni so tei vayera clean garya or null garya.
+      setErrorMessage(null);
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // stringify = we cannot send completely json so all we had to convert into json so, we used stringify
+        body: JSON.stringify(formData),
+      });
+      // jaba hamiley json ma response pauxam taba teslai data ma convert gardey baneko ho
+      const data = await res.json();
+      if (data.success === false) {
+        return setErrorMessage(data.message);
+      }
+      setLoading(false);
+      if (res.ok) {
+        navigate("/sign-in");
+      }
+    } catch (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen mt-20">
       {/* one div for the left side and another div for righside */}
@@ -17,39 +67,61 @@ export default function Signup() {
             Blog
           </Link>
           <p className="text-sm mt-5">
-            This is a demo Project. You can sign up with your email and password
-            or with Google.
+            Code's Climb is a blog website dedicated to programming,
+            development, and technology. It features tutorials, articles, and
+            resources for developers of all levels, covering topics such as web
+            development, software engineering, best coding practices, and the
+            latest industry trends. The blog aims to help readers improve their
+            coding skills, stay updated with new technologies, and advance their
+            careers in tech.
           </p>
         </div>
         {/* right side */}
         <div className="flex-1">
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
               <Label value="Your username" />
               <TextInput
                 type="text"
                 placeholder="Username"
                 id="username"
+                onChange={handleChange}
               ></TextInput>
             </div>
             <div>
               <Label value="Your email" />
               <TextInput
-                type="text"
+                type="email"
                 placeholder="name@company.com"
                 id="email"
+                onChange={handleChange}
               ></TextInput>
             </div>
             <div>
               <Label value="Your password" />
               <TextInput
-                type="text"
+                type="password"
                 placeholder="Password"
-                id="email"
+                id="password"
+                onChange={handleChange}
               ></TextInput>
             </div>
-            <Button gradientDuoTone="purpleToPink" type="submit">
-              Sign Up
+            <Button
+              gradientDuoTone="purpleToPink"
+              type="submit"
+              disabled={loading}
+            >
+              {
+                // as we are adding more html element inside the () so, we need to cover it with an empty fragment
+                loading ? (
+                  <>
+                    <Spinner size="sm" />
+                    <span className="pl-3">Loading...</span>
+                  </>
+                ) : (
+                  "Sign up"
+                )
+              }
             </Button>
           </form>
           <div className="flex gap-2 text-sm mt-5">
@@ -58,6 +130,11 @@ export default function Signup() {
               Sign In
             </Link>
           </div>
+          {errorMessage && (
+            <Alert className="mt-5" color="failure">
+              {errorMessage}
+            </Alert>
+          )}
         </div>
       </div>
     </div>
