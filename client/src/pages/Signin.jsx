@@ -1,16 +1,21 @@
 import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  signInFailure,
+  signInStart,
+  signInSucess,
+} from "../redux/user/userSlice";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
 
   // This is for the error message
   // suru ma msg xhai khali hunxa so, null rakheko
-  const [errorMessage, setErrorMessage] = useState(null);
+  const { loading, error: errorMessage } = useSelector((state) => state.user);
 
-  // loading ko lagi
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
   //suru ma navigate lai initialized garya
   const navigate = useNavigate();
 
@@ -24,14 +29,11 @@ export default function SignIn() {
     // e.preventDefault ley xhai refresh hunna dinna.
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      return setErrorMessage("Please fill out all fields.");
+      return dispatch(signInFailure("Please fill all the fields"));
     }
     // submit the form
     try {
-      //
-      setLoading(true);
-      // setErrorMessage chai kina null garya bani cause previous request we want to clean that one, ani previous request error free pani huna sakxa ni so tei vayera clean garya or null garya.
-      setErrorMessage(null);
+      dispatch(signInStart());
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -41,15 +43,15 @@ export default function SignIn() {
       // jaba hamiley json ma response pauxam taba teslai data ma convert gardey baneko ho
       const data = await res.json();
       if (data.success === false) {
-        return setErrorMessage(data.message);
+        dispatch(signInFailure(data.message));
       }
-      setLoading(false);
+
       if (res.ok) {
+        dispatch(signInSucess(data));
         navigate("/");
       }
     } catch (error) {
-      setErrorMessage(error.message);
-      setLoading(false);
+      dispatch(signInFailure(error.message));
     }
   };
   return (
