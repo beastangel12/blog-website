@@ -80,7 +80,6 @@ export const signin = async (req, res, next) => {
 
 // next is for the error
 export const google = async (req, res, next) => {
-  //frontend ma xhai email, name ani photo rakheko cha so, tei vayera tyo xhai yeha backend ley req garya ho frontend lai
   const { email, name, googlePhotoUrl } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -95,15 +94,16 @@ export const google = async (req, res, next) => {
         .json(rest);
     } else {
       const generatedPassword =
-        Math.random().toString(36).slice(-8) + Math.random().toString;
+        Math.random().toString(36).slice(-8) +
+        Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
       const newUser = new User({
         username:
-          name.toLowerCase().split("").join("") +
+          name.toLowerCase().split(" ").join("") +
           Math.random().toString(9).slice(-4),
         email,
         password: hashedPassword,
-        profielPicture: googlePhotoUrl,
+        profilePicture: googlePhotoUrl,
       });
       await newUser.save();
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
