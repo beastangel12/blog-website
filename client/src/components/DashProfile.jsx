@@ -19,7 +19,6 @@ export default function DashProfile() {
   const [imageFileUploadProgress, setImageFIleUploadProgress] = useState(null);
   const [imageFileUploadError, setImageFileUploadError] = useState(null);
   const handleImageChange = (e) => {
-    // sjrfdhrjdsf
     const file = e.target.files[0];
     if (file) {
       setImageFile(file);
