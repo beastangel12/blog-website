@@ -78,13 +78,14 @@ export default function Header() {
         ) : (
           <Link to="/sign-in">
             <Button gradientDuoTone="purpleToBlue" outline>
-              Sign in
+              Sign in 
             </Button>
           </Link>
         )}
 
         <Navbar.Toggle />
       </div>
+
       <Navbar.Collapse>
         <Navbar.Link active={path === "/"} as={"div"}>
           <Link to="/">Home</Link>
