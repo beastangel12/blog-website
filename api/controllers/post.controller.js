@@ -18,6 +18,8 @@ export const create = async (req, res, next) => {
     slug,
     userId: req.user.id,
   });
+
+  console.log("newPost", newPost);
   try {
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
