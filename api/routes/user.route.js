@@ -1,5 +1,4 @@
 import express from "express";
-import { getUsers } from "../controllers/post.controller.js";
 import {
   deleteUser,
   signout,
@@ -14,6 +13,6 @@ router.get("/test", test);
 router.put("/update/:userId", verifyToken, updateUser);
 router.delete("/delete/:userId", verifyToken, deleteUser);
 router.post("/signout", signout);
-router.get("/getusers", verifyToken, getUsers);
+// router.get("/getusers", verifyToken, getUsers);
 
 export default router;
