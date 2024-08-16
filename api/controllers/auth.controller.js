@@ -43,31 +43,117 @@ export const signup = async (req, res, next) => {
   }
 };
 
+// export const signin = async (req, res, next) => {
+//   const { email, password } = req.body;
+
+//   if (!email || !password || email === "" || password === "") {
+//     next(errorhandler(400, "All fields are required"));
+//   }
+
+//   try {
+//     const validUser = await User.findOne({ email });
+//     if (!validUser) {
+//       return next(errorhandler(404, "User not found"));
+//     }
+//     const validPassword = bcryptjs.compareSync(password, validUser.password);
+//     if (!validPassword) {
+//       return next(errorhandler(400, "Invalid password"));
+//     }
+//     const token = jwt.sign(
+//       {
+//         id: validUser._id,
+//         isAdmin: validUser.isAdmin,
+//       },
+//       process.env.JWT_SECRET
+//     );
+
+//     const { password: pass, ...rest } = validUser._doc;
+//     res
+//       .status(200)
+//       .cookie("access_token", token, {
+//         httpOnly: true,
+//       })
+//       .json(rest);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// locked
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
+  const MAX_FAILED_ATTEMPTS = 5; // Number of failed attempts before lockout
+  const LOCK_TIME = 30 * 60 * 1000; // Lock account for 30 minutes
 
   if (!email || !password || email === "" || password === "") {
-    next(errorhandler(400, "All fields are required"));
+    return next(errorhandler(400, "All fields are required"));
   }
 
   try {
-    const validUser = await User.findOne({ email });
-    if (!validUser) {
+    const user = await User.findOne({ email });
+    if (!user) {
       return next(errorhandler(404, "User not found"));
     }
-    const validPassword = bcryptjs.compareSync(password, validUser.password);
+
+    // Check if the account is locked
+    if (user.isLocked) {
+      if (new Date() > user.lockUntil) {
+        // Unlock account if lock time has passed
+        user.isLocked = false;
+        user.failedLoginAttempts = 0;
+        user.lockUntil = undefined;
+        await user.save();
+      } else {
+        return next(
+          errorhandler(
+            403,
+            `Account is locked. Try again after ${Math.ceil(
+              (user.lockUntil - new Date()) / (60 * 1000)
+            )} minutes.`
+          )
+        );
+      }
+    }
+
+    const validPassword = bcryptjs.compareSync(password, user.password);
     if (!validPassword) {
+      // Increment failed login attempts
+      user.failedLoginAttempts += 1;
+
+      if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) {
+        // Lock the account if max attempts are reached
+        user.isLocked = true;
+        user.lockUntil = new Date(Date.now() + LOCK_TIME);
+        await user.save();
+        return next(
+          errorhandler(
+            403,
+            `Account is locked due to too many failed login attempts. Try again after ${
+              LOCK_TIME / (60 * 1000)
+            } minutes.`
+          )
+        );
+      }
+
+      await user.save();
       return next(errorhandler(400, "Invalid password"));
     }
+
+    // Reset failed login attempts on successful login
+    user.failedLoginAttempts = 0;
+    user.isLocked = false;
+    user.lockUntil = undefined;
+    await user.save();
+
     const token = jwt.sign(
       {
-        id: validUser._id,
-        isAdmin: validUser.isAdmin,
+        id: user._id,
+        isAdmin: user.isAdmin,
       },
       process.env.JWT_SECRET
     );
 
-    const { password: pass, ...rest } = validUser._doc;
+    const { password: pass, ...rest } = user._doc;
     res
       .status(200)
       .cookie("access_token", token, {
