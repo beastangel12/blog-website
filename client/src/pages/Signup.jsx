@@ -153,13 +153,39 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState(null); // New state for password errors
   const navigate = useNavigate();
+
+  // Define password requirements
+  const MIN_PASSWORD_LENGTH = 8;
+  const MAX_PASSWORD_LENGTH = 12;
+
+  const passwordComplexityPattern =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).+$/;
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData({ ...formData, [id]: value.trim() });
+
     if (id === "password") {
       setPassword(value);
+
+      // Check password length and complexity requirements
+      if (value.length < MIN_PASSWORD_LENGTH) {
+        setPasswordError(
+          `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`
+        );
+      } else if (value.length > MAX_PASSWORD_LENGTH) {
+        setPasswordError(
+          `Password must be no more than ${MAX_PASSWORD_LENGTH} characters long.`
+        );
+      } else if (!passwordComplexityPattern.test(value)) {
+        setPasswordError(
+          "Password must include uppercase letters, lowercase letters, numbers, and special characters."
+        );
+      } else {
+        setPasswordError(null);
+      }
     }
   };
 
@@ -168,6 +194,21 @@ export default function Signup() {
     if (!formData.username || !formData.email || !formData.password) {
       return setErrorMessage("Please fill out all fields.");
     }
+
+    // Check password length and complexity before submitting
+    if (
+      password.length < MIN_PASSWORD_LENGTH ||
+      password.length > MAX_PASSWORD_LENGTH
+    ) {
+      return setErrorMessage(
+        `Password must be between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters long.`
+      );
+    } else if (!passwordComplexityPattern.test(password)) {
+      return setErrorMessage(
+        "Password must include uppercase letters, lowercase letters, numbers, and special characters."
+      );
+    }
+
     try {
       setLoading(true);
       setErrorMessage(null);
@@ -237,6 +278,10 @@ export default function Signup() {
                 onChange={handleChange}
               />
               <PasswordStrengthIndicator password={password} />
+              {passwordError && (
+                <p className="text-red-500">{passwordError}</p>
+              )}{" "}
+              {/* Display password complexity error */}
             </div>
             <Button
               gradientDuoTone="purpleToPink"

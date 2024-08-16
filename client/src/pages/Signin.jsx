@@ -140,7 +140,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import OAuth from "../components/OAuth";
-import PasswordStrengthIndicator from "../components/PasswordStrengthIndicators"; // Import the PasswordStrengthIndicator component
+import PasswordStrengthIndicator from "../components/PasswordStrengthIndicators";
 import {
   signInFailure,
   signInStart,
@@ -150,6 +150,7 @@ import {
 export default function SignIn() {
   const [formData, setFormData] = useState({});
   const [password, setPassword] = useState(""); // State for password
+  const [localError, setLocalError] = useState(null); // Local state for error messages
 
   const { loading, error: errorMessage } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -178,13 +179,18 @@ export default function SignIn() {
       const data = await res.json();
       if (data.success === false) {
         dispatch(signInFailure(data.message));
-      }
-      if (res.ok) {
+        setLocalError(data.message); // Show error message locally
+        // Clear the error message after 3 seconds
+        setTimeout(() => setLocalError(null), 3000);
+      } else if (res.ok) {
         dispatch(signInSucess(data));
         navigate("/");
       }
     } catch (error) {
       dispatch(signInFailure(error.message));
+      setLocalError(error.message); // Show error message locally
+      // Clear the error message after 3 seconds
+      setTimeout(() => setLocalError(null), 3000);
     }
   };
 
@@ -252,9 +258,9 @@ export default function SignIn() {
               Sign Up
             </Link>
           </div>
-          {errorMessage && (
+          {localError && (
             <Alert className="mt-5" color="failure">
-              {errorMessage}
+              {localError}
             </Alert>
           )}
         </div>
